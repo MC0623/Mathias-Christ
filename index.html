@@ -5,150 +5,573 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mathias Christ</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --accent: #0ea5e9;
+      --accent-dark: #0369a1;
+      --accent-light: #e0f2fe;
+      --bg: #f0f7ff;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #e8f0fe;
-      color: #1a1a2e;
+      background: var(--bg);
+      color: var(--text);
       line-height: 1.6;
     }
 
+    /* HEADER */
     header {
-      background: linear-gradient(135deg, #1565c0, #42a5f5);
+      background: linear-gradient(135deg, #0f172a 0%, #0369a1 60%, #0ea5e9 100%);
       color: white;
-      padding: 70px 20px;
+      padding: 70px 20px 60px;
       text-align: center;
-      box-shadow: 0 4px 20px rgba(21, 101, 192, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 30%, rgba(14,165,233,0.25) 0%, transparent 60%);
+      pointer-events: none;
     }
 
     header h1 {
-      font-size: 3rem;
-      letter-spacing: 3px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-size: 3.2rem;
+      letter-spacing: 4px;
+      font-weight: 700;
+      position: relative;
     }
 
-    header p {
+    header .subtitle {
       margin-top: 10px;
-      font-size: 1.1rem;
-      color: rgba(255,255,255,0.8);
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.7);
+      font-weight: 300;
+      letter-spacing: 1px;
+      position: relative;
     }
 
+    header .contact-bar {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    header .contact-bar a {
+      color: white;
+      text-decoration: none;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 30px;
+      padding: 6px 18px;
+      font-size: 0.88rem;
+      backdrop-filter: blur(6px);
+      transition: background 0.2s;
+    }
+
+    header .contact-bar a:hover {
+      background: rgba(255,255,255,0.22);
+    }
+
+    /* NAV */
+    nav {
+      background: #0f172a;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+
+    nav a {
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      padding: 14px 18px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      position: relative;
+    }
+
+    nav a::after {
+      content: "";
+      position: absolute;
+      bottom: 0; left: 50%; right: 50%;
+      height: 2px;
+      background: var(--accent);
+      transition: left 0.2s, right 0.2s;
+    }
+
+    nav a:hover { color: white; }
+    nav a:hover::after { left: 10%; right: 10%; }
+
+    /* MAIN */
     main {
-      max-width: 800px;
+      max-width: 860px;
       margin: 40px auto;
       padding: 0 20px;
       display: flex;
       flex-direction: column;
-      gap: 30px;
+      gap: 28px;
     }
 
+    /* SECTIONS */
     section {
-      background: white;
-      border-radius: 14px;
-      padding: 30px;
-      box-shadow: 0 4px 16px rgba(21, 101, 192, 0.1);
-      border-top: 4px solid #1976d2;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 2px 20px rgba(14,165,233,0.08);
+      border: 1px solid rgba(14,165,233,0.12);
     }
 
     section h2 {
-      font-size: 1.4rem;
-      margin-bottom: 15px;
-      color: #1565c0;
-      border-bottom: 3px solid #42a5f5;
-      padding-bottom: 8px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 22px;
+      color: var(--accent-dark);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    section h2::after {
+      content: "";
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      border-radius: 2px;
+    }
+
+    section p { color: var(--muted); }
+
+    /* KURZPROFIL */
+    .kurzprofil p {
+      font-size: 1rem;
+      line-height: 1.85;
+      color: #334155;
+    }
+
+    /* TIMELINE */
+    .timeline { display: flex; flex-direction: column; gap: 22px; }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .timeline-date {
+      font-size: 0.78rem;
+      color: var(--accent);
+      font-weight: 700;
+      padding-top: 3px;
+      text-align: right;
+      padding-right: 16px;
+      border-right: 2px solid var(--accent-light);
+      line-height: 1.4;
+    }
+
+    .timeline-content h3 {
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .timeline-content .company {
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .timeline-content ul { padding-left: 16px; margin-top: 6px; }
+
+    .timeline-content ul li {
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    /* SKILLS */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+    }
+
+    .skill-group h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .skill-tag {
       display: inline-block;
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin: 3px 3px 3px 0;
     }
 
-    section p {
-      color: #445;
+    /* LANGUAGE BARS */
+    .lang-item { margin-bottom: 14px; }
+
+    .lang-item label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
     }
 
+    .lang-bar {
+      background: var(--accent-light);
+      border-radius: 10px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .lang-bar-fill {
+      height: 100%;
+      border-radius: 10px;
+      background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+    }
+
+    /* FREIZEIT CARDS */
     .freizeit-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 15px;
-      margin-top: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
     }
 
     .freizeit-card {
-      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-      border-radius: 10px;
-      padding: 20px 16px;
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+      border-radius: 12px;
+      padding: 22px 14px;
       text-align: center;
-      border: 1px solid #90caf9;
+      border: 1px solid rgba(14,165,233,0.2);
       transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .freizeit-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(21, 101, 192, 0.18);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 24px rgba(14,165,233,0.15);
     }
 
-    .freizeit-card .icon {
-      font-size: 2.2rem;
-      margin-bottom: 10px;
+    .freizeit-card .icon { font-size: 2.2rem; margin-bottom: 10px; }
+
+    .freizeit-card p { font-weight: 600; color: var(--accent-dark); font-size: 0.88rem; }
+
+    /* AUSBILDUNG */
+    .edu-item {
+      margin-bottom: 18px;
+      padding-left: 14px;
+      border-left: 2px solid var(--accent-light);
     }
 
-    .freizeit-card p {
-      font-weight: 600;
-      color: #1565c0;
+    .edu-item .edu-date {
+      font-size: 0.78rem;
+      color: var(--accent);
+      font-weight: 700;
     }
+
+    .edu-item h3 {
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 2px 0;
+    }
+
+    .edu-item p { font-size: 0.86rem; color: var(--muted); }
 
     footer {
       text-align: center;
       padding: 30px;
-      color: #7a9cc5;
-      font-size: 0.85rem;
+      color: #94a3b8;
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 2rem; }
+      .timeline-item { grid-template-columns: 1fr; }
+      .timeline-date { text-align: left; border-right: none; border-left: 2px solid var(--accent-light); padding-left: 10px; padding-right: 0; }
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Mathias Christ</h1>
-    <p>Willkommen auf meiner Seite</p>
-  </header>
+<header>
+  <h1>Mathias Christ</h1>
+  <p class="subtitle">Betriebsökonom FH &nbsp;|&nbsp; Leiter Services &amp; Operations &nbsp;|&nbsp; Stadtrat Laufen BL</p>
+  <div class="contact-bar">
+    <a href="mailto:me@mathiaschrist.ch">&#9993; me@mathiaschrist.ch</a>
+    <a href="https://www.linkedin.com/in/mathias-christ-016113133/" target="_blank">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:5px;"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      LinkedIn
+    </a>
+  </div>
+</header>
 
-  <main>
+<nav>
+  <a href="#profil">Über mich</a>
+  <a href="#beruf">Beruf</a>
+  <a href="#politik">Politik</a>
+  <a href="#ausbildung">Ausbildung</a>
+  <a href="#skills">Skills</a>
+  <a href="#engagement">Engagement</a>
+  <a href="#freizeit">Freizeit</a>
+  <a href="links.html">Links</a>
+</nav>
 
-    <section>
-      <h2>Über mich</h2>
-      <p>Hallo, ich bin Mathias Christ. Hier findest du einen kurzen Einblick in mein Leben, meinen Beruf und meine Interessen.</p>
-    </section>
+<main>
 
-    <section>
-      <h2>Beruf</h2>
-      <p><!-- Hier deinen Beruf und deine Tätigkeit eintragen --></p>
-    </section>
+  <!-- KURZPROFIL -->
+  <section id="profil" class="kurzprofil">
+    <h2>Über mich</h2>
+    <p>Betriebsökonom FH mit breiter Führungserfahrung — heute als Leiter Services &amp; Operations mit Verantwortung für bereichsübergreifende Prozesse, Dienstleistungen und den effizienten Betrieb einer komplexen Organisation. Mein Hintergrund umfasst langjährige Erfahrung in der finanziellen Unternehmensführung, Verlagerungsprojekte und Change-Management in der FMCG-Branche sowie im Non-profit-Bereich. Als Führungskraft sehe ich den Menschen als Ganzes, mit seinen individuellen Fähigkeiten und Talenten. Eine analytisch vernetzte Denkweise, gepaart mit Leidenschaft und Loyalität, begleiten mich täglich. Neben meiner beruflichen Tätigkeit engagiere ich mich politisch als Stadtrat in Laufen BL und bringe mich aktiv in der Erwachsenenbildung ein.</p>
+  </section>
 
-    <section>
-      <h2>Freizeit</h2>
-      <div class="freizeit-grid">
-        <div class="freizeit-card">
-          <div class="icon">&#127939;</div>
-          <p>Sport</p>
-        </div>
-        <div class="freizeit-card">
-          <div class="icon">&#9992;</div>
-          <p>Reisen</p>
-        </div>
-        <div class="freizeit-card">
-          <div class="icon">&#127925;</div>
-          <p>Kultur &amp; Musik</p>
+  <!-- BERUFSERFAHRUNG -->
+  <section id="beruf">
+    <h2>Berufserfahrung</h2>
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-date">2021 – heute</div>
+        <div class="timeline-content">
+          <div class="company">HKV Aarau</div>
+          <h3>Leiter Services</h3>
+          <h3>Mitglied Leitungsteam HKV Swiss Weiterbildung</h3>
+          <h3>Dozent Option Finanzen</h3>
         </div>
       </div>
-    </section>
 
-  </main>
+      <div class="timeline-item">
+        <div class="timeline-date">08/2017 – heute</div>
+        <div class="timeline-content">
+          <div class="company">Stiftung Leiern Gelterkinden</div>
+          <h3>Leiter Finanzen &amp; Services</h3>
+        </div>
+      </div>
 
-  <footer>
-    &copy; 2026 Mathias Christ
-  </footer>
+      <div class="timeline-item">
+        <div class="timeline-date">04/2014 – 06/2017</div>
+        <div class="timeline-content">
+          <div class="company">Beiersdorf AG Reinach</div>
+          <h3>Finance Manager</h3>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">04/2012 – 03/2014</div>
+        <div class="timeline-content">
+          <div class="company">Beiersdorf AG Hamburg</div>
+          <h3>Financial Controller MU Deutschland / Schweiz</h3>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">01/2007 – 03/2012</div>
+        <div class="timeline-content">
+          <div class="company">Beiersdorf AG Münchenstein</div>
+          <h3>Financial Controller</h3>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">12/2005 – 12/2006</div>
+        <div class="timeline-content">
+          <div class="company">Beiersdorf AG Münchenstein</div>
+          <h3>Traineeship Finance / Controlling</h3>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- POLITISCHES ENGAGEMENT -->
+  <section id="politik">
+    <h2>Politisches Engagement</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-date">07/2020 – heute</div>
+        <div class="timeline-content">
+          <div class="company">Stadt Laufen BL</div>
+          <h3>Mitglied des Stadtrats</h3>
+          <ul>
+            <li>Verantwortung für Departement Wirtschaft / Kultur &amp; Sport</li>
+            <li>Vorstandsmitglied Promotion Laufental (Wirtschaftsförderung)</li>
+            <li>Vorstandsmitglied Museumsverein Laufental &amp; Verein Stedtlibibliothek</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEBENBERUFLICHES ENGAGEMENT -->
+  <section id="engagement">
+    <h2>Nebenberufliches Engagement</h2>
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-date">aktuell</div>
+        <div class="timeline-content">
+          <div class="company">Nationale Jugend Brass Band der Schweiz (NJBB)</div>
+          <h3>Vizepräsident</h3>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">aktuell</div>
+        <div class="timeline-content">
+          <div class="company">Stiftung PTZ</div>
+          <h3>Stiftungsrat</h3>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">aktuell</div>
+        <div class="timeline-content">
+          <div class="company">Sport- und Freizeitregion Laufental Thierstein</div>
+          <h3>Präsident</h3>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- AUSBILDUNG -->
+  <section id="ausbildung">
+    <h2>Ausbildung &amp; Weiterbildung</h2>
+
+    <div class="edu-item">
+      <div class="edu-date">2026</div>
+      <h3>SVEB-Zertifikat Kursleitung</h3>
+      <p>Eidg. anerkannter Abschluss in der Erwachsenenbildung &nbsp;·&nbsp; HKV Aarau</p>
+    </div>
+
+    <div class="edu-item">
+      <div class="edu-date">2018</div>
+      <h3>Arbeitsrecht für die Praxis</h3>
+      <p>FHNW Olten</p>
+    </div>
+
+    <div class="edu-item">
+      <div class="edu-date">2014</div>
+      <h3>Diplom Systemischer Coach &amp; Leadership Master Trainer</h3>
+      <p>CoachAkademie Schweiz &nbsp;·&nbsp; St. Galler Coaching Modell</p>
+    </div>
+
+    <div class="edu-item">
+      <div class="edu-date">2004 – 2005</div>
+      <h3>Betriebsökonom FH</h3>
+      <p>Hochschule für Wirtschaft Luzern (HSW) &nbsp;·&nbsp; Vertiefung: Finance &amp; Controlling</p>
+    </div>
+
+    <div class="edu-item">
+      <div class="edu-date">2000 – 2003</div>
+      <h3>Eidg. dipl. Tourismusfachmann HF</h3>
+      <p>Academia Engiadina Samedan &nbsp;·&nbsp; Vertiefung: Marketingplaner SAWI</p>
+    </div>
+
+    <div class="edu-item">
+      <div class="edu-date">2000</div>
+      <h3>Cambridge Certificate in Advanced English (CAE)</h3>
+      <p>Sprachaufenthalt Bristol, UK</p>
+    </div>
+
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <h2>Kenntnisse &amp; Sprachen</h2>
+    <div class="skills-grid">
+
+      <div class="skill-group">
+        <h3>IT &amp; Software</h3>
+        <span class="skill-tag">Excel (Pivot, SVERWEIS)</span>
+        <span class="skill-tag">PowerPoint</span>
+        <span class="skill-tag">Word</span>
+        <span class="skill-tag">SAP R/3 FI/CO</span>
+        <span class="skill-tag">SAP BW/BI</span>
+        <span class="skill-tag">Lobos 3.X</span>
+      </div>
+
+      <div class="skill-group">
+        <h3>Sprachen</h3>
+        <div class="lang-item">
+          <label><span>Deutsch</span><span>Muttersprache</span></label>
+          <div class="lang-bar"><div class="lang-bar-fill" style="width:100%"></div></div>
+        </div>
+        <div class="lang-item">
+          <label><span>Englisch</span><span>Sehr gut</span></label>
+          <div class="lang-bar"><div class="lang-bar-fill" style="width:88%"></div></div>
+        </div>
+        <div class="lang-item">
+          <label><span>Französisch</span><span>Gut</span></label>
+          <div class="lang-bar"><div class="lang-bar-fill" style="width:65%"></div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FREIZEIT & PASSION -->
+  <section id="freizeit">
+    <h2>Freizeit &amp; Passion</h2>
+    <div class="freizeit-grid">
+      <div class="freizeit-card">
+        <div class="icon">&#127929;</div>
+        <p>Musik &amp; Dirigieren</p>
+      </div>
+      <div class="freizeit-card">
+        <div class="icon">&#127949;</div>
+        <p>Mountainbiken</p>
+      </div>
+      <div class="freizeit-card">
+        <div class="icon">&#9975;</div>
+        <p>Skifahren</p>
+      </div>
+      <div class="freizeit-card">
+        <div class="icon">&#127956;</div>
+        <p>Wandern</p>
+      </div>
+      <div class="freizeit-card">
+        <div class="icon">&#9992;</div>
+        <p>Reisen</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2026 Mathias Christ &nbsp;·&nbsp; <a href="mailto:me@mathiaschrist.ch" style="color:#7a9cc5;">me@mathiaschrist.ch</a>
+</footer>
 
 </body>
 </html>
