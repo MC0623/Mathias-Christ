@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wettermodell-Vergleich</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface2: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #7c6ff7;
+            --c-ecmwf: #f87171;
+            --c-gfs: #60a5fa;
+            --c-icon: #4ade80;
+            --c-gem: #fbbf24;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+        .logo span { color: var(--accent); }
+        .source { font-size: 11px; color: var(--muted); }
+
+        .search-wrap {
+            max-width: 640px;
+            margin: 28px auto 0;
+            padding: 0 20px;
+        }
+
+        .search-row { display: flex; gap: 8px; }
+
+        input[type="text"] {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 11px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        input[type="text"]:focus { border-color: var(--accent); }
+        input[type="text"]::placeholder { color: var(--muted); }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 11px 22px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+            white-space: nowrap;
+        }
+        .btn-primary:hover { opacity: 0.88; }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .location-bar {
+            text-align: center;
+            padding: 14px 20px 0;
+            color: var(--muted);
+            font-size: 13px;
+            min-height: 36px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            padding: 16px 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 3px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 3px;
+        }
+
+        .seg-btn {
+            background: transparent;
+            color: var(--muted);
+            border: none;
+            padding: 7px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .seg-btn:hover { color: var(--text); }
+        .seg-btn.active { background: var(--accent); color: #fff; }
+
+        .model-pills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+
+        .pill {
+            border: 2px solid;
+            background: transparent;
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            letter-spacing: 0.3px;
+        }
+        .pill.ecmwf { border-color: var(--c-ecmwf); color: var(--c-ecmwf); }
+        .pill.gfs   { border-color: var(--c-gfs);   color: var(--c-gfs);   }
+        .pill.icon  { border-color: var(--c-icon);  color: var(--c-icon);  }
+        .pill.gem   { border-color: var(--c-gem);   color: var(--c-gem);   }
+        .pill.active.ecmwf { background: var(--c-ecmwf); color: #000; }
+        .pill.active.gfs   { background: var(--c-gfs);   color: #000; }
+        .pill.active.icon  { background: var(--c-icon);  color: #000; }
+        .pill.active.gem   { background: var(--c-gem);   color: #000; }
+
+        .spinner-wrap {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 14px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-msg {
+            display: none;
+            text-align: center;
+            padding: 30px 20px;
+            color: #f87171;
+            font-size: 14px;
+        }
+
+        #main { display: none; }
+
+        .chart-card {
+            margin: 0 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 20px 16px;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chart-title { font-size: 15px; font-weight: 600; }
+        .spread-badge {
+            font-size: 12px;
+            color: var(--muted);
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 3px 10px;
+        }
+        .spread-badge .spread-val { color: var(--text); font-weight: 600; }
+
+        .chart-wrap { position: relative; height: 380px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 14px 20px 24px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-top-width: 3px;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .stat-model { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+        .stat-current { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 2px; }
+        .stat-unit { font-size: 14px; color: var(--muted); font-weight: 400; }
+        .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+        .stat-row { display: flex; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+        .stat-row span { font-weight: 600; color: var(--text); }
+        .no-data { color: var(--muted); font-style: italic; font-size: 13px; }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 11px;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+            margin-top: 10px;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .chart-wrap { height: 280px; }
+        }
+        @media (max-width: 440px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .controls { gap: 6px; }
+            .seg-btn { padding: 7px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🌤 Wetter<span>modell</span>-Vergleich</div>
+    <div class="source">Daten: Open-Meteo API · kostenlos & open-source</div>
+</header>
+
+<div class="search-wrap">
+    <div class="search-row">
+        <input type="text" id="locInput" placeholder="Stadt eingeben, z.B. Wien, Berlin, Zürich …"
+               onkeydown="if(event.key==='Enter') search()">
+        <button class="btn-primary" id="searchBtn" onclick="search()">Suchen</button>
+    </div>
+</div>
+
+<div class="location-bar" id="locBar">Gib eine Stadt ein, um die Wettermodelle zu vergleichen.</div>
+
+<div class="controls">
+    <div class="btn-group" id="varGroup">
+        <button class="seg-btn active" onclick="setVar('temperature_2m', this)">🌡 Temperatur</button>
+        <button class="seg-btn" onclick="setVar('precipitation', this)">🌧 Niederschlag</button>
+        <button class="seg-btn" onclick="setVar('windspeed_10m', this)">💨 Wind</button>
+        <button class="seg-btn" onclick="setVar('sunshine_duration', this)">☀️ Sonnenschein</button>
+    </div>
+    <div class="btn-group" id="rangeGroup">
+        <button class="seg-btn active" onclick="setRange(24, this)">24 h</button>
+        <button class="seg-btn" onclick="setRange(72, this)">3 Tage</button>
+        <button class="seg-btn" onclick="setRange(168, this)">7 Tage</button>
+    </div>
+    <div class="model-pills">
+        <button class="pill ecmwf active" onclick="toggleModel('ecmwf', this)">ECMWF</button>
+        <button class="pill gfs active"   onclick="toggleModel('gfs', this)">GFS</button>
+        <button class="pill icon active"  onclick="toggleModel('icon', this)">ICON</button>
+        <button class="pill gem active"   onclick="toggleModel('gem', this)">GEM</button>
+    </div>
+</div>
+
+<div class="spinner-wrap" id="spinner">
+    <div class="spinner"></div>
+    Lade Daten von 4 Wettermodellen …
+</div>
+<div class="error-msg" id="errMsg"></div>
+
+<div id="main">
+    <div class="chart-card">
+        <div class="chart-header">
+            <div class="chart-title" id="chartTitle">Temperatur (°C)</div>
+            <div class="spread-badge" id="spreadBadge">Spread: <span class="spread-val" id="spreadVal">–</span></div>
+        </div>
+        <div class="chart-wrap">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+    <div class="stats-grid" id="statsGrid"></div>
+</div>
+
+<footer>
+    Wetterdaten von <a href="https://open-meteo.com" target="_blank">Open-Meteo</a> ·
+    Modelle: ECMWF IFS (Europäisches Zentrum), GFS (NOAA/USA), ICON (DWD/Deutschland), GEM (Environment Canada)
+</footer>
+
+<script>
+const MODELS = {
+    ecmwf: { id: 'ecmwf_ifs025',  name: 'ECMWF IFS',    long: 'ECMWF (EU)',     color: '#f87171' },
+    gfs:   { id: 'gfs_seamless',  name: 'GFS (NOAA)',   long: 'GFS (USA/NOAA)', color: '#60a5fa' },
+    icon:  { id: 'icon_seamless', name: 'ICON (DWD)',   long: 'ICON (DWD/DE)',  color: '#4ade80' },
+    gem:   { id: 'gem_seamless',  name: 'GEM (Canada)', long: 'GEM (Canada)',   color: '#fbbf24' }
+};
+
+const VARS = {
+    temperature_2m:   { unit: '°C',    title: '🌡 Temperatur (°C)',           bar: false },
+    precipitation:    { unit: 'mm',    title: '🌧 Niederschlag (mm/h)',        bar: true  },
+    windspeed_10m:    { unit: 'km/h',  title: '💨 Windgeschwindigkeit (km/h)', bar: false },
+    sunshine_duration:{ unit: 'min/h', title: '☀️ Sonnenscheindauer (min/h)',  bar: true, transform: v => v / 60 }
+};
+
+const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+let activeVar    = 'temperature_2m';
+let activeRange  = 24;
+let activeModels = { ecmwf: true, gfs: true, icon: true, gem: true };
+let allData      = {};
+let chart        = null;
+let times        = [];   // ISO strings "2026-05-24T14:00" in location's local time
+let utcOffset    = 0;    // seconds from API, used to find "now" in location time
+
+// ── ISO helpers — no new Date() to avoid browser-TZ conversion ───────────────
+
+const isoH  = iso => +iso.slice(11,13);
+const isoD  = iso => +iso.slice(8,10);
+const isoMo = iso => +iso.slice(5,7);
+const isoY  = iso => +iso.slice(0,4);
+const isoWD = iso => new Date(Date.UTC(isoY(iso), isoMo(iso)-1, isoD(iso))).getUTCDay();
+
+function fmtTime(iso)  { return iso.slice(11,16); }
+function fmtShort(iso) { return `${WD[isoWD(iso)]} ${String(isoH(iso)).padStart(2,'0')}h`; }
+function fmtDay(iso)   { return `${WD[isoWD(iso)]} ${String(isoD(iso)).padStart(2,'0')}.${String(isoMo(iso)).padStart(2,'0')}.`; }
+
+// Build sparse label array: text only at canonical positions, '' elsewhere.
+// Chart.js ticks.callback returns null for '' → tick hidden, no label duplication.
+function genLabels(slicedTimes) {
+    return slicedTimes.map((iso, i) => {
+        const h = isoH(iso);
+        if (activeRange <= 24)  return i % 3 === 0  ? fmtTime(iso)  : '';
+        if (activeRange <= 72)  return h % 6 === 0   ? fmtShort(iso) : '';
+        return h === 12         ? fmtDay(iso)  : '';  // noon = visually centered day label
+    });
+}
+
+function fmtTooltip(iso) {
+    return `${WD[isoWD(iso)]}, ${String(isoD(iso)).padStart(2,'0')}.${String(isoMo(iso)).padStart(2,'0')}. – ${fmtTime(iso)} Uhr`;
+}
+
+// ── Time helpers ──────────────────────────────────────────────────────────────
+
+// Returns an ISO string "YYYY-MM-DDTHH:00" representing the current hour in the
+// queried location, derived from UTC now + utcOffset (no TZ conversion via Date).
+function nowLocalISO() {
+    const d = new Date(Date.now() + utcOffset * 1000);
+    return [
+        d.getUTCFullYear(),
+        String(d.getUTCMonth()+1).padStart(2,'0'),
+        String(d.getUTCDate()).padStart(2,'0')
+    ].join('-') + 'T' + String(d.getUTCHours()).padStart(2,'0') + ':00';
+}
+
+function getNowIdx() {
+    const now = nowLocalISO();
+    const idx = times.findIndex(t => t >= now);
+    return idx >= 0 ? idx : 0;
+}
+
+// Return sliced times and values starting from the current hour.
+function getSlice(modelKey) {
+    const start = getNowIdx();
+    const end   = start + activeRange;
+    const raw = allData[modelKey]?.hourly?.[activeVar]?.slice(start, end) || [];
+    const tf  = VARS[activeVar].transform;
+    return {
+        slicedTimes: times.slice(start, end),
+        vals: tf ? raw.map(v => v != null ? tf(v) : null) : raw
+    };
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+
+async function search() {
+    const q = document.getElementById('locInput').value.trim();
+    if (!q) return;
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true; btn.textContent = '…';
+    try {
+        const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=de`);
+        const d = await r.json();
+        if (!d.results?.length) { showErr('Ort nicht gefunden. Bitte anderen Suchbegriff versuchen.'); return; }
+        const p = d.results[0];
+        const label = [p.name, p.admin1, p.country].filter(Boolean).join(', ');
+        document.getElementById('locBar').textContent =
+            `📍 ${label}  (${p.latitude.toFixed(3)}° N, ${p.longitude.toFixed(3)}° E)`;
+        await fetchModels(p.latitude, p.longitude);
+    } catch(e) {
+        showErr('Netzwerkfehler: ' + e.message);
+    } finally {
+        btn.disabled = false; btn.textContent = 'Suchen';
+    }
+}
+
+async function fetchModels(lat, lon) {
+    showSpinner(true); hideErr();
+    allData = {}; utcOffset = 0;
+
+    const vars = 'temperature_2m,precipitation,windspeed_10m,sunshine_duration';
+    const jobs = Object.entries(MODELS).map(async ([key, m]) => {
+        try {
+            const url = `https://api.open-meteo.com/v1/forecast`
+                + `?latitude=${lat}&longitude=${lon}`
+                + `&hourly=${vars}&models=${m.id}&forecast_days=7&timezone=auto`;
+            const r = await fetch(url);
+            if (!r.ok) { console.warn(`${m.name}: HTTP ${r.status}`); return [key, null]; }
+            return [key, await r.json()];
+        } catch(e) { console.warn(`${m.name}:`, e); return [key, null]; }
+    });
+
+    (await Promise.all(jobs)).forEach(([k, v]) => { if (v) allData[k] = v; });
+
+    if (!Object.keys(allData).length) {
+        showErr('Keine Wetterdaten verfügbar. Bitte später erneut versuchen.');
+        showSpinner(false); return;
+    }
+
+    const first = allData[Object.keys(allData)[0]];
+    times     = first.hourly.time;
+    utcOffset = first.utc_offset_seconds ?? 0;
+
+    renderChart(); renderStats();
+    document.getElementById('main').style.display = 'block';
+    showSpinner(false);
+}
+
+// ── Chart ─────────────────────────────────────────────────────────────────────
+
+function renderChart() {
+    const varInfo = VARS[activeVar];
+    document.getElementById('chartTitle').textContent = varInfo.title;
+
+    const datasets = [];
+    let slicedTimes = [];
+
+    for (const [key, m] of Object.entries(MODELS)) {
+        if (!activeModels[key] || !allData[key]) continue;
+        const { slicedTimes: st, vals } = getSlice(key);
+        if (!slicedTimes.length) slicedTimes = st;
+        datasets.push({
+            label: m.name,
+            data: vals,
+            borderColor: m.color,
+            backgroundColor: varInfo.bar ? m.color + 'bb' : m.color + '15',
+            fill: !varInfo.bar,
+            tension: 0.35,
+            pointRadius: activeRange <= 48 ? 2 : 0,
+            pointHoverRadius: 6,
+            borderWidth: varInfo.bar ? 0 : 2,
+            borderSkipped: false
+        });
+    }
+
+    const labels = genLabels(slicedTimes);
+    updateSpread();
+
+    if (chart) chart.destroy();
+    const ctx = document.getElementById('chart').getContext('2d');
+    const snapTimes = slicedTimes; // closure for tooltip
+
+    chart = new Chart(ctx, {
+        type: varInfo.bar ? 'bar' : 'line',
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            animation: { duration: 300 },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: '#e6edf3', usePointStyle: true, pointStyle: 'circle', padding: 18, font: { size: 12, weight: '600' } }
+                },
+                tooltip: {
+                    backgroundColor: '#21262d', borderColor: '#30363d', borderWidth: 1,
+                    titleColor: '#e6edf3', bodyColor: '#8b949e', padding: 12, cornerRadius: 8,
+                    callbacks: {
+                        title: (items) => fmtTooltip(snapTimes[items[0].dataIndex] ?? ''),
+                        label: (item) => ` ${item.dataset.label}: ${item.raw == null ? '–' : Number(item.raw).toFixed(1)} ${varInfo.unit}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: '#30363d55' },
+                    border: { color: '#30363d' },
+                    ticks: {
+                        autoSkip: false,       // we control which ticks show
+                        maxRotation: 0,
+                        color: '#8b949e',
+                        font: { size: 11 },
+                        callback: function(value, idx) {
+                            const l = this.chart.data.labels[idx];
+                            return l === '' ? null : l;  // null → Chart.js hides tick
+                        }
+                    }
+                },
+                y: {
+                    grid: { color: '#30363d55' },
+                    border: { color: '#30363d' },
+                    ticks: {
+                        color: '#8b949e', font: { size: 11 },
+                        callback: v => `${Number(v).toFixed(activeVar === 'precipitation' ? 1 : 0)} ${varInfo.unit}`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateSpread() {
+    const nowIdx = getNowIdx();
+    const vals = Object.keys(MODELS)
+        .filter(k => activeModels[k] && allData[k])
+        .map(k => allData[k].hourly[activeVar]?.[nowIdx])
+        .filter(v => v != null);
+
+    const badge = document.getElementById('spreadBadge');
+    const el    = document.getElementById('spreadVal');
+    if (vals.length < 2) { badge.style.display = 'none'; return; }
+    badge.style.display = '';
+    const spread = Math.max(...vals) - Math.min(...vals);
+    el.textContent = `±${(spread/2).toFixed(1)} ${VARS[activeVar].unit}  (${Math.min(...vals).toFixed(1)} – ${Math.max(...vals).toFixed(1)})`;
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+
+function renderStats() {
+    const grid = document.getElementById('statsGrid');
+    grid.innerHTML = '';
+    const varInfo = VARS[activeVar];
+    const nowIdx  = getNowIdx();
+
+    for (const [key, m] of Object.entries(MODELS)) {
+        const card = document.createElement('div');
+        card.className = 'stat-card';
+        card.style.borderTopColor = m.color;
+
+        if (!allData[key]) {
+            card.innerHTML = `<div class="stat-model" style="color:${m.color}">${m.name}</div><div class="no-data">Keine Daten</div>`;
+        } else {
+            const { vals } = getSlice(key);
+            const cur   = allData[key].hourly[activeVar]?.[nowIdx];
+            const clean = vals.filter(v => v != null);
+            const mn  = clean.length ? Math.min(...clean) : null;
+            const mx  = clean.length ? Math.max(...clean) : null;
+            const avg = clean.length ? clean.reduce((a,b)=>a+b,0)/clean.length : null;
+            const fmt = v => v != null ? Number(v).toFixed(1) : '–';
+
+            card.innerHTML = `
+                <div class="stat-model" style="color:${m.color}">${m.long}</div>
+                <div class="stat-current">${fmt(cur)}<span class="stat-unit"> ${varInfo.unit}</span></div>
+                <div class="stat-label">Jetzt</div>
+                <div class="stat-row">
+                    <div>↓ <span>${fmt(mn)}</span></div>
+                    <div>↑ <span>${fmt(mx)}</span></div>
+                    <div>Ø <span>${fmt(avg)}</span></div>
+                </div>`;
+        }
+        grid.appendChild(card);
+    }
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+
+function setVar(v, btn)  { activeVar = v;  setActive('#varGroup', btn);   if (hasData()) { renderChart(); renderStats(); } }
+function setRange(h, btn){ activeRange = h; setActive('#rangeGroup', btn); if (hasData()) { renderChart(); renderStats(); } }
+function toggleModel(key, btn) { activeModels[key] = !activeModels[key]; btn.classList.toggle('active'); if (hasData()) renderChart(); }
+function setActive(sel, btn) { document.querySelectorAll(sel+' .seg-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+function hasData() { return Object.keys(allData).length > 0; }
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+
+function showSpinner(on) { document.getElementById('spinner').style.display = on ? 'block' : 'none'; if (on) document.getElementById('main').style.display = 'none'; }
+function showErr(msg)    { const e = document.getElementById('errMsg'); e.textContent = msg; e.style.display = 'block'; }
+function hideErr()       { document.getElementById('errMsg').style.display = 'none'; }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('locInput').value = 'Wien';
+search();
+</script>
+</body>
+</html>

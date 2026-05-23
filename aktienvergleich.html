@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aktienvergleich</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface2: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #7c6ff7;
+            --green: #4ade80;
+            --red: #f87171;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo { font-size: 18px; font-weight: 700; }
+        .logo span { color: var(--accent); }
+        .source { font-size: 11px; color: var(--muted); }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            padding: 16px 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 3px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 3px;
+        }
+
+        .seg-btn {
+            background: transparent;
+            color: var(--muted);
+            border: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .seg-btn:hover { color: var(--text); }
+        .seg-btn.active { background: var(--accent); color: #fff; }
+
+        .toggle-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+        .stock-mgmt {
+            margin: 0 20px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+
+        input[type="text"] {
+            flex: 1;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 9px 14px;
+            border-radius: 7px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s;
+            text-transform: uppercase;
+        }
+        input[type="text"]:focus { border-color: var(--accent); }
+        input[type="text"]::placeholder { color: var(--muted); text-transform: none; }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+            white-space: nowrap;
+        }
+        .btn-primary:hover { opacity: 0.88; }
+
+        .presets { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; }
+
+        .preset-chip {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .preset-chip:hover { border-color: var(--accent); color: var(--text); }
+        .preset-chip.used { opacity: 0.35; cursor: default; pointer-events: none; }
+
+        .active-stocks { display: flex; gap: 6px; flex-wrap: wrap; min-height: 28px; }
+
+        .stock-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px 5px 12px;
+            border-radius: 99px;
+            border: 2px solid;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .stock-pill .x {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 15px;
+            line-height: 1;
+            opacity: 0.65;
+            padding: 0;
+            transition: opacity 0.15s;
+        }
+        .stock-pill .x:hover { opacity: 1; }
+
+        .spinner-wrap {
+            display: none;
+            text-align: center;
+            padding: 36px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        .spinner {
+            width: 32px; height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .warnings { margin: 0 20px 10px; display: flex; flex-direction: column; gap: 6px; }
+        .warn-msg {
+            background: #78350f22;
+            border: 1px solid #92400e66;
+            color: #fbbf24;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+            gap: 10px;
+            margin: 0 20px 14px;
+        }
+
+        .metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-top-width: 3px;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .m-ticker { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 2px; }
+        .m-name { font-size: 11px; color: var(--muted); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .m-price { font-size: 21px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+        .m-change { font-size: 13px; font-weight: 600; }
+        .up { color: var(--green); }
+        .dn { color: var(--red); }
+
+        .chart-card {
+            margin: 0 20px 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 20px 16px;
+        }
+        .chart-wrap { height: 380px; }
+
+        .empty-hint {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--muted);
+            font-size: 14px;
+            display: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 11px;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 600px) {
+            .chart-wrap { height: 260px; }
+            .seg-btn { padding: 7px 9px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">📈 <span>Aktien</span>vergleich</div>
+    <div class="source">Yahoo Finance · tagesaktuell</div>
+</header>
+
+<div class="controls">
+    <div class="btn-group" id="periodGroup">
+        <button class="seg-btn" onclick="setPeriod('5d',  this)">1W</button>
+        <button class="seg-btn" onclick="setPeriod('1mo', this)">1M</button>
+        <button class="seg-btn" onclick="setPeriod('3mo', this)">3M</button>
+        <button class="seg-btn" onclick="setPeriod('6mo', this)">6M</button>
+        <button class="seg-btn active" onclick="setPeriod('1y', this)">1J</button>
+        <button class="seg-btn" onclick="setPeriod('5y',  this)">5J</button>
+    </div>
+    <button class="toggle-btn active" id="normBtn" onclick="toggleNorm()">% Entwicklung</button>
+</div>
+
+<div class="stock-mgmt">
+    <div class="search-row">
+        <input type="text" id="tickerInput" placeholder="Ticker eingeben, z.B. AAPL oder NESN.SW"
+               onkeydown="if(event.key==='Enter') addFromInput()">
+        <button class="btn-primary" onclick="addFromInput()">＋</button>
+    </div>
+    <div class="presets" id="presets"></div>
+    <div class="active-stocks" id="activePills"></div>
+</div>
+
+<div class="spinner-wrap" id="spinner"><div class="spinner"></div>Kursdaten werden geladen …</div>
+<div class="warnings" id="warnings"></div>
+<div class="metric-grid" id="metrics"></div>
+<div class="chart-card" id="chartCard" style="display:none">
+    <div class="chart-wrap"><canvas id="chart"></canvas></div>
+</div>
+<div class="empty-hint" id="emptyHint">Füge oben eine Aktie hinzu, um zu starten.</div>
+
+<footer>Kursdaten: Yahoo Finance via CORS-Proxy · Nur zur Orientierung, keine Anlageberatung</footer>
+
+<script>
+const PRESETS = ['AAPL','MSFT','GOOGL','NVDA','META','TSLA','AMZN','JPM','NESN.SW','NOVN.SW'];
+
+const HINTS = {
+    NOVARTIS:'NOVN.SW oder NVS', ROCHE:'ROG.SW oder RHHBY', NESTLE:'NESN.SW oder NSRGY',
+    SIEMENS:'SIE.DE', SAP:'SAP.DE', VOLKSWAGEN:'VOW3.DE', VW:'VOW3.DE',
+    BMW:'BMW.DE', ALLIANZ:'ALV.DE', ABB:'ABBN.SW', UBS:'UBSG.SW',
+};
+
+const PALETTE = ['#f87171','#60a5fa','#4ade80','#fbbf24','#a78bfa','#fb923c','#34d399','#f472b6','#38bdf8','#e879f9'];
+
+let tickers  = ['AAPL','MSFT','NVDA'];
+let cache    = {};
+let period   = '1y';
+let normalized = true;
+let chart    = null;
+let busy     = false;
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+
+async function proxyFetch(url) {
+    const proxies = [
+        `https://corsproxy.io/?${encodeURIComponent(url)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+    ];
+    for (const p of proxies) {
+        try {
+            const r = await fetch(p, { signal: AbortSignal.timeout(12000) });
+            if (r.ok) return await r.json();
+        } catch { /* try next */ }
+    }
+    throw new Error('Proxy nicht erreichbar');
+}
+
+async function loadTicker(ticker) {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${period}&interval=1d&events=history`;
+    const json = await proxyFetch(url);
+    if (json.chart?.error) throw new Error(json.chart.error.description || 'Fehler');
+    const res = json.chart?.result?.[0];
+    if (!res) throw new Error('Keine Daten');
+    const ts = res.timestamp || [];
+    const px = res.indicators.quote[0].close || [];
+    return {
+        dates:    ts.map(t => new Date(t * 1000)),
+        prices:   px,
+        currency: res.meta.currency || 'USD',
+        name:     res.meta.longName || res.meta.shortName || ticker,
+        current:  res.meta.regularMarketPrice ?? px.filter(Boolean).at(-1)
+    };
+}
+
+async function refresh() {
+    if (busy) return;
+    busy = true;
+    cache = {};
+    showSpinner(true);
+    clearWarnings();
+
+    const jobs = tickers.map(t => loadTicker(t).then(d => ({ ok: true, t, d })).catch(e => ({ ok: false, t, e })));
+    const results = await Promise.all(jobs);
+
+    results.forEach(({ ok, t, d, e }) => {
+        if (ok) { cache[t] = d; }
+        else {
+            const hint = HINTS[t.toUpperCase()];
+            addWarning(hint
+                ? `<b>${t}</b> nicht gefunden — meintest du: <b>${hint}</b>?`
+                : `<b>${t}</b> nicht gefunden. Tipp: DE-Aktien enden auf <b>.DE</b> (z.B. SAP.DE), CH-Aktien auf <b>.SW</b> (z.B. NOVN.SW).`
+            );
+        }
+    });
+
+    busy = false;
+    showSpinner(false);
+    renderAll();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function renderAll() {
+    renderPills();
+    renderPresets();
+    renderMetrics();
+    renderChart();
+    document.getElementById('emptyHint').style.display = tickers.length === 0 ? 'block' : 'none';
+}
+
+function renderChart() {
+    const loaded = tickers.filter(t => cache[t]);
+    document.getElementById('chartCard').style.display = loaded.length ? 'block' : 'none';
+    if (!loaded.length) return;
+
+    const ref   = cache[loaded[0]];
+    const labels = ref.dates.map(d => `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.`);
+    const step   = labels.length <= 30 ? 5 : labels.length <= 90 ? 10 : labels.length <= 180 ? 20 : 40;
+
+    const datasets = loaded.map(t => {
+        const { prices } = cache[t];
+        const color = PALETTE[tickers.indexOf(t) % PALETTE.length];
+        let data = prices;
+        if (normalized) {
+            const base = prices.find(v => v != null) ?? 1;
+            data = prices.map(v => v == null ? null : (v / base - 1) * 100);
+        }
+        return { label: t, data, borderColor: color, backgroundColor: color + '12',
+                 fill: false, tension: 0.2, pointRadius: 0, pointHoverRadius: 5,
+                 borderWidth: 2, spanGaps: true };
+    });
+
+    // Zero reference line
+    if (normalized) {
+        datasets.push({
+            label: '__0__',
+            data: new Array(labels.length).fill(0),
+            borderColor: '#8b949e55', borderWidth: 1,
+            borderDash: [6, 4], pointRadius: 0, fill: false, spanGaps: true
+        });
+    }
+
+    if (chart) chart.destroy();
+    const ctx = document.getElementById('chart').getContext('2d');
+    const snapDates = ref.dates;
+
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            animation: { duration: 300 },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#e6edf3', usePointStyle: true, pointStyle: 'circle',
+                        padding: 18, font: { size: 12, weight: '600' },
+                        filter: item => !item.text.startsWith('__')
+                    }
+                },
+                tooltip: {
+                    filter: item => !item.dataset.label.startsWith('__'),
+                    backgroundColor: '#21262d', borderColor: '#30363d', borderWidth: 1,
+                    titleColor: '#e6edf3', bodyColor: '#8b949e', padding: 12, cornerRadius: 8,
+                    callbacks: {
+                        title: (items) => {
+                            const d = snapDates[items[0].dataIndex];
+                            return d ? d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
+                        },
+                        label: (item) => {
+                            const v = item.raw;
+                            if (v == null) return ` ${item.dataset.label}: –`;
+                            if (normalized) return ` ${item.dataset.label}: ${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
+                            const cur = cache[item.dataset.label]?.currency;
+                            return ` ${item.dataset.label}: ${fmtPrice(v, cur)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: '#30363d44' }, border: { color: '#30363d' },
+                    ticks: {
+                        autoSkip: false, maxRotation: 0, color: '#8b949e', font: { size: 11 },
+                        callback: function(val, idx) { return idx % step === 0 ? this.chart.data.labels[idx] : null; }
+                    }
+                },
+                y: {
+                    grid: { color: '#30363d44' }, border: { color: '#30363d' },
+                    ticks: {
+                        color: '#8b949e', font: { size: 11 },
+                        callback: v => normalized ? `${v >= 0 ? '+' : ''}${Number(v).toFixed(1)}%` : Number(v).toLocaleString('de-CH')
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderMetrics() {
+    const grid = document.getElementById('metrics');
+    grid.innerHTML = '';
+    tickers.filter(t => cache[t]).forEach(t => {
+        const { prices, currency, name, current } = cache[t];
+        const clean = prices.filter(v => v != null);
+        const first = clean[0] ?? 1;
+        const last  = current ?? clean.at(-1) ?? 0;
+        const pct   = (last - first) / first * 100;
+        const color = PALETTE[tickers.indexOf(t) % PALETTE.length];
+        const up    = pct >= 0;
+        const card  = document.createElement('div');
+        card.className = 'metric-card';
+        card.style.borderTopColor = color;
+        card.innerHTML = `
+            <div class="m-ticker" style="color:${color}">${t}</div>
+            <div class="m-name" title="${name}">${name}</div>
+            <div class="m-price">${fmtPrice(last, currency)}</div>
+            <div class="m-change ${up ? 'up' : 'dn'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</div>`;
+        grid.appendChild(card);
+    });
+}
+
+function renderPills() {
+    const wrap = document.getElementById('activePills');
+    wrap.innerHTML = '';
+    tickers.forEach((t, i) => {
+        const color = PALETTE[i % PALETTE.length];
+        const ok = !!cache[t];
+        const pill = document.createElement('div');
+        pill.className = 'stock-pill';
+        pill.style.borderColor = color;
+        pill.style.color = color;
+        pill.innerHTML = `<span style="${!ok && !busy ? 'text-decoration:line-through;opacity:.45' : ''}">${t}</span>
+                          <button class="x" onclick="remove('${t}')">×</button>`;
+        wrap.appendChild(pill);
+    });
+}
+
+function renderPresets() {
+    const wrap = document.getElementById('presets');
+    wrap.innerHTML = '';
+    PRESETS.forEach(t => {
+        const chip = document.createElement('button');
+        chip.className = 'preset-chip' + (tickers.includes(t) ? ' used' : '');
+        chip.textContent = t;
+        chip.onclick = () => addTicker(t);
+        wrap.appendChild(chip);
+    });
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+
+function addFromInput() {
+    const el = document.getElementById('tickerInput');
+    addTicker(el.value.trim().toUpperCase());
+    el.value = '';
+}
+
+function addTicker(t) {
+    if (!t || tickers.includes(t)) return;
+    tickers.push(t);
+    renderPills();
+    renderPresets();
+    refresh();
+}
+
+function remove(t) {
+    tickers = tickers.filter(x => x !== t);
+    delete cache[t];
+    renderAll();
+}
+
+function setPeriod(p, btn) {
+    period = p;
+    document.querySelectorAll('#periodGroup .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    refresh();
+}
+
+function toggleNorm() {
+    normalized = !normalized;
+    const btn = document.getElementById('normBtn');
+    btn.classList.toggle('active', normalized);
+    btn.textContent = normalized ? '% Entwicklung' : 'Absoluter Kurs';
+    renderChart();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fmtPrice(v, currency) {
+    if (v == null) return '–';
+    const sym = currency === 'CHF' ? 'CHF ' : currency === 'EUR' ? '€ ' : '$ ';
+    return sym + Number(v).toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function showSpinner(on) { document.getElementById('spinner').style.display = on ? 'block' : 'none'; }
+function addWarning(html) { const e = document.createElement('div'); e.className = 'warn-msg'; e.innerHTML = html; document.getElementById('warnings').appendChild(e); }
+function clearWarnings() { document.getElementById('warnings').innerHTML = ''; }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderPresets();
+renderPills();
+refresh();
+</script>
+</body>
+</html>
